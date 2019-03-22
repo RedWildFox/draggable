@@ -14,6 +14,7 @@ import Draggable from './Draggable';
 import Droppable from './Droppable';
 import Swappable from './Swappable';
 import Sortable from './Sortable';
+import Menu from './Menu';
 
 export {
   AbstractEvent as BaseEvent,
@@ -22,6 +23,7 @@ export {
   Droppable,
   Swappable,
   Sortable,
+  Menu,
   Sensors,
   Plugins,
 };
