@@ -1,7 +1,7 @@
 import Sortable from '../Sortable';
-import {} from './MenuEvent';
+import {} from './NestedEvent';
 
-export default class Menu extends Sortable {
+export default class Nested extends Sortable {
   constructor(containers = [], options = {}) {
     super(containers, {
       ...options,

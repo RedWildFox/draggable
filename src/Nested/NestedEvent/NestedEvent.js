@@ -6,11 +6,11 @@ import AbstractEvent from 'shared/AbstractEvent';
  * @module SortableEvent
  * @extends AbstractEvent
  */
-export class MenuEvent extends AbstractEvent {
-  static type = 'sortable';
+export class NestedEvent extends AbstractEvent {
+  static type = 'nested';
 
   /**
-   * Original drag event that triggered this sortable event
+   * Original drag event that triggered this nested event
    * @property dragEvent
    * @type {DragEvent}
    * @readonly
@@ -21,17 +21,17 @@ export class MenuEvent extends AbstractEvent {
 }
 
 /**
- * Sortable start event
- * @class SortableStartEvent
- * @module SortableStartEvent
- * @extends SortableEvent
+ * Nested start event
+ * @class NestedStartEvent
+ * @module NestedStartEvent
+ * @extends NestedEvent
  */
-export class MenuStartEvent extends MenuEvent {
-  static type = 'Menu:start';
+export class NestedStartEvent extends NestedEvent {
+  static type = 'Nested:start';
   static cancelable = true;
 
   /**
-   * Start index of source on Menu start
+   * Start index of source on Nested start
    * @property startIndex
    * @type {Number}
    * @readonly
@@ -41,7 +41,7 @@ export class MenuStartEvent extends MenuEvent {
   }
 
   /**
-   * Start container on Menu start
+   * Start container on Nested start
    * @property startContainer
    * @type {HTMLElement}
    * @readonly
@@ -52,13 +52,13 @@ export class MenuStartEvent extends MenuEvent {
 }
 
 /**
- * Menu sort event
- * @class MenuSortEvent
- * @module MenuSortEvent
- * @extends MenuEvent
+ * Nested sort event
+ * @class NestedSortEvent
+ * @module NestedSortEvent
+ * @extends NestedEvent
  */
-export class MenuSortEvent extends MenuEvent {
-  static type = 'Menu:sort';
+export class NestedSortEvent extends NestedEvent {
+  static type = 'Nested:sort';
   static cancelable = true;
 
   /**
@@ -93,13 +93,13 @@ export class MenuSortEvent extends MenuEvent {
 }
 
 /**
- * Menu sorted event
- * @class MenuSortedEvent
- * @module MenuSortedEvent
- * @extends MenuEvent
+ * Nested sorted event
+ * @class NestedSortedEvent
+ * @module NestedSortedEvent
+ * @extends NestedEvent
  */
-export class MenuSortedEvent extends MenuEvent {
-  static type = 'Menu:sorted';
+export class NestedSortedEvent extends NestedEvent {
+  static type = 'Nested:sorted';
 
   /**
    * Index of last sorted event
@@ -143,16 +143,16 @@ export class MenuSortedEvent extends MenuEvent {
 }
 
 /**
- * Menu stop event
- * @class MenuStopEvent
- * @module MenuStopEvent
- * @extends MenuEvent
+ * Nested stop event
+ * @class NestedStopEvent
+ * @module NestedStopEvent
+ * @extends NestedEvent
  */
-export class MenuStopEvent extends MenuEvent {
-  static type = 'Menu:stop';
+export class NestedStopEvent extends NestedEvent {
+  static type = 'Nested:stop';
 
   /**
-   * Original index on Menu start
+   * Original index on Nested start
    * @property oldIndex
    * @type {Number}
    * @readonly
