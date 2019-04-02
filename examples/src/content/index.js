@@ -8,6 +8,7 @@ import UniqueDropzone from './Droppable/UniqueDropzone';
 import SimpleList from './Sortable/SimpleList';
 import Transformed from './Sortable/Transformed';
 import MultipleContainers from './Sortable/MultipleContainers';
+import Nested from './Sortable/Nested';
 // Swappable
 import Flexbox from './Swappable/Flexbox';
 import Floated from './Swappable/Floated';
@@ -24,6 +25,7 @@ const Content = {
   SimpleList,
   Transformed,
   MultipleContainers,
+  Nested,
   Flexbox,
   Floated,
   GridLayout,
