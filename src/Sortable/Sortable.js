@@ -114,6 +114,7 @@ export default class Sortable extends Draggable {
    * @param {DragStartEvent} event - Drag start event
    */
   [onDragStart](event) {
+    console.log('sortable', event);
     this.startContainer = event.source.parentNode;
     this.startIndex = this.index(event.source);
 
