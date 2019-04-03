@@ -2,14 +2,16 @@
 import {Nested} from '@shopify/draggable';
 
 export default function SimpleList() {
-  const containerSelector = '#Nested .NestedListList';
+  const containerSelector = '#Nested .NestedList';
   const containers = document.querySelectorAll(containerSelector);
 
   if (containers.length === 0) {
     return false;
   }
 
-  const sortable = new Nested(containers, {
+  console.log(containers);
+
+  const nested = new Nested(containers, {
     draggable: '.StackedListItem--isDraggable',
     mirror: {
       appendTo: containerSelector,
@@ -17,5 +19,5 @@ export default function SimpleList() {
     },
   });
 
-  return sortable;
+  return nested;
 }

@@ -9,7 +9,10 @@
 // using an arbitrary width until I have time to fix the `columns` function
 $simple-list-width: 42rem;
 
-.SimpleList {
+.Nested {
   @include centered-width(columns(5));
 }
 
+.StackedListItem .NestedList{
+  padding-left: 60px;
+}
