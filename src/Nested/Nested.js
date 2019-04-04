@@ -1,212 +1,226 @@
+import {closest} from '../shared/utils';
+
 import Sortable from '../Sortable';
 import {NestedInEvent, NestedOutEvent} from './NestedEvent';
+import {DragOverEvent,DragOverContainerEvent} from '../Draggable/DragEvent';
 
 const onDragStart = Symbol('onDragStart');
 const onDragStop = Symbol('onDragStop');
 const onDragMove = Symbol('onDragMove');
+const onDragOverContainer = Symbol('onDragOverContainer');
+
+const defaultClasses = {
+    'container:nested': 'NestedList',
+};
 
 const defaultOptions = {
-  indent: 60,
-  level: 3,
+    indent: 60,
+    maxLevel: 3,
 };
 
 export default class Nested extends Sortable {
-  constructor(containers = [], options = {}) {
-    super(containers, {
-      ...defaultOptions,
-      ...options,
-      announcements: {
-        ...(options.announcements || {}),
-      },
-    });
+    constructor(containers = [], options = {}) {
+        super(containers, {
+            ...defaultOptions,
+            ...options,
+            classes: {
+                ...defaultClasses,
+                ...(options.classes || {}),
+            },
+            announcements: {
+                ...(options.announcements || {}),
+            },
+        });
+
+        /**
+         * start index of source on drag start
+         * @property startIndex
+         * @type {Number}
+         */
+        // this.indentMove = this.options.indent / 2;
+
+        // this.mouse = {
+        //   offsetX: 0,
+        //   startX: 0,
+        //   lastX: 0,
+        //   nowX: 0,
+        //   indentLevelX: 0,
+        //   distY: 0,
+        //   dirAx: 0,
+        //   dirX: 0,
+        //   lastDirX: 0,
+        //   distAxX: 0,
+        // };
+
+        // this.isTouch    = false;
+        // this.moving     = false;
+        // this.dragEl     = null;
+        // this.dragRootEl = null;
+        // this.dragDepth  = 0;
+        // this.hasNewRoot = false;
+        // this.pointEl    = null;
+
+        this[onDragStart] = this[onDragStart].bind(this);
+        this[onDragStop] = this[onDragStop].bind(this);
+        this[onDragMove] = this[onDragMove].bind(this);
+        this[onDragOverContainer] = this[onDragOverContainer].bind(this);
 
 
-    console.log(this.options);
-    /**
-     * start index of source on drag start
-     * @property startIndex
-     * @type {Number}
-     */
-    this.indentMove = this.options.indent / 2;
-
-    this.mouse = {
-      offsetX: 0,
-      startX: 0,
-      lastX: 0,
-      nowX: 0,
-      indentLevelX: 0,
-      distY: 0,
-      dirAx: 0,
-      dirX: 0,
-      lastDirX: 0,
-      distAxX: 0,
-    };
-
-    this.isTouch    = false;
-    this.moving     = false;
-    this.dragEl     = null;
-    this.dragRootEl = null;
-    this.dragDepth  = 0;
-    this.hasNewRoot = false;
-    this.pointEl    = null;
-
-    this[onDragStart] = this[onDragStart].bind(this);
-    this[onDragStop] = this[onDragStop].bind(this);
-    this[onDragMove] = this[onDragMove].bind(this);
-
-    this.on('drag:start', this[onDragStart])
-      .on('drag:stop', this[onDragStop])
-      .on('drag:move', this[onDragMove]);
-  }
-
-  /**
-   * Destroys Sortable instance.
-   */
-  destroy() {
-    super.destroy();
-
-    this.off('drag:start', this[onDragStart])
-      .off('drag:stop', this[onDragStop])
-      .off('drag:move', this[onDragMove]);
-  }
-
-  /**
-   * Drag start handler
-   * @private
-   * @param {DragStartEvent} event - Drag start event
-   */
-  [onDragStart](event) {
-    // console.log('nested onDragStart', event);
-    this.mouse.startX = event.sensorEvent.clientX;
-    this.mouse.startY = event.sensorEvent.clientY;
-  }
-
-  /**
-   * Drag stop handler
-   * @private
-   * @param {DragStopEvent} event - Drag stop event
-   */
-  [onDragStop](event) {
-    // console.log('nested onDragOver', event);
-
-  }
-
-  /**
-   * Drag stop handler
-   * @private
-   * @param {DragStopEvent} event - Drag stop event
-   */
-  [onDragMove](event) {
-    console.log('nested onDragMove', event);
-
-
-    let list;
-    let parent;
-    let prev;
-    let next;
-    let depth;
-    const opt = this.options;
-    const mouse = this.mouse;
-
-    // mouse position last events
-    mouse.lastX = mouse.nowX;
-    mouse.lastY = mouse.nowY;
-    // mouse position this events
-    mouse.nowX = event.sensorEvent.clientX;
-    mouse.nowY = event.sensorEvent.clientY;
-    // distance mouse moved between events
-    mouse.indentLevelX = (mouse.nowX - mouse.lastX) / this.options.indent;
-    mouse.distY = mouse.nowY - mouse.lastY;
-    // direction mouse is now moving (on both axis)
-    mouse.dirX = Math.min(this.options.level, mouse.indentLevelX);
-
-      // mouse.distX === 0 ? 0 : mouse.distX > this.indentMove ? 1 : -1;
-    mouse.dirY = mouse.distY === 0 ? 0 : mouse.distY > 0 ? 1 : -1;
-    // axis mouse is now moving on
-    var newAx = Math.abs(mouse.distX) > Math.abs(mouse.distY) ? 1 : 0;
-
-    // do nothing on first move
-    if (!mouse.moving) {
-      mouse.dirAx = newAx;
-      mouse.moving = true;
-      return;
+        this.on('drag:start', this[onDragStart])
+            .on('drag:move', this[onDragMove])
+            .on('drag:stop', this[onDragStop])
+            .on('drag:over:container', this[onDragOverContainer]);
     }
-
-    // calc distance moved on this axis (and direction)
-    if (mouse.dirAx !== newAx) {
-      mouse.distAxX = 0;
-      mouse.distAxY = 0;
-    } else {
-      mouse.distAxX += Math.abs(mouse.distX);
-      if (mouse.dirX !== 0 && mouse.dirX !== mouse.lastDirX) {
-        mouse.distAxX = 0;
-      }
-      mouse.distAxY += Math.abs(mouse.distY);
-      if (mouse.dirY !== 0 && mouse.dirY !== mouse.lastDirY) {
-        mouse.distAxY = 0;
-      }
-    }
-    mouse.dirAx = newAx;
 
     /**
-     * move horizontal
+     * Destroys Sortable instance.
      */
-    if (mouse.dirAx && mouse.distAxX >= opt.threshold) {
-      // reset move distance on x-axis for new phase
-      mouse.distAxX = 0;
-      prev = this.placeEl.prev(opt.itemNodeName);
-      // increase horizontal level if previous sibling exists and is not collapsed
-      if (mouse.distX > 0 && prev.length && !prev.hasClass(opt.collapsedClass)) {
-        // cannot increase level when item above is collapsed
-        list = prev.find(opt.listNodeName).last();
-        // check if depth limit has reached
-        depth = this.placeEl.parents(opt.listNodeName).length;
-        if (depth + this.dragDepth <= opt.maxDepth) {
-          // create new sub-level if one doesn't exist
-          if (!list.length) {
-            list = $('<' + opt.listNodeName + '/>').addClass(opt.listClass);
-            list.append(this.placeEl);
-            prev.append(list);
-            this.setParent(prev);
-          } else {
-            // else append to next level up
-            list = prev.children(opt.listNodeName).last();
-            list.append(this.placeEl);
-          }
-        }
-      }
-      // decrease horizontal level
-      if (mouse.distX < 0) {
-        // we can't decrease a level if an item preceeds the current one
-        next = this.placeEl.next(opt.itemNodeName);
-        if (!next.length) {
-          parent = this.placeEl.parent();
-          this.placeEl.closest(opt.itemNodeName).after(this.placeEl);
-          if (!parent.children().length) {
-            this.unsetParent(parent.parent());
-          }
-        }
-      }
+    destroy() {
+        super.destroy();
+
+        this.off('drag:start', this[onDragStart])
+            .off('drag:stop', this[onDragStop])
+            .off('drag:move', this[onDragMove])
+            .off('drag:over:container', this[onDragOverContainer]);
     }
 
-    var isEmpty = false;
+    /**
+     * Drag start handler
+     * @private
+     * @param {DragStartEvent} event - Drag start event
+     */
+    [onDragStart](event) {
+        const { sensorEvent, source, sourceContainer } = event;
+        const containerClass = `.${ this.getClassNameFor('container:nested') }`;
 
-    // find list item under cursor
-    if (!hasPointerEvents) {
-      this.dragEl[0].style.visibility = 'hidden';
+        const level = getContainerLevel(this.containers, sourceContainer);
+        const nestedLevel = getItemNestedLevel(source, containerClass);
+
+        this.startX = sensorEvent.clientX;
+
+        this.initialLevel = level;
+        this.currentLevel = level;
+        this.nestedLevel  = nestedLevel;
     }
-    this.pointEl = $(document.elementFromPoint(event.pageX - document.body.scrollLeft, event.pageY - (window.pageYOffset || document.documentElement.scrollTop)));
-    if (!hasPointerEvents) {
-      this.dragEl[0].style.visibility = 'visible';
+
+    /**
+     * Drag over container handler
+     * @private
+     * @param {DragOverContainerEvent} event - Drag over container event
+     */
+    [onDragOverContainer](event) {
+        const { overContainer } = event;
+
+        const level = getContainerLevel(this.containers, overContainer);
+
+        this.initialLevel = level;
+        this.currentLevel = level;
     }
-    if (this.pointEl.hasClass(opt.handleClass)) {
-      this.pointEl = this.pointEl.parent(opt.itemNodeName);
+
+
+    /**
+     * Drag stop handler
+     * @private
+     * @param {DragStopEvent} event - Drag stop event
+     */
+    [onDragStop](event) {
+        // console.log('nested onDragOver', event);
     }
-    if (this.pointEl.hasClass(opt.emptyClass)) {
-      isEmpty = true;
+
+    /**
+     * Drag stop handler
+     * @private
+     * @param {DragStopEvent} event - Drag stop event
+     */
+    [onDragMove](event) {
+        const { options, nestedLevel } = this;
+        const { sensorEvent, source } = event;
+
+        const container = source.parentNode;
+        const items = this.getDraggableElementsForContainer(container);
+
+        const containerLevel = getContainerLevel(this.containers, container);
+
+        this.lastX = sensorEvent.clientX;
+
+        this.distanceX = this.lastX - this.startX;
+        this.moveLevel = Math.round(this.distanceX / (options.indent / 2));
+        this.moveDirection = this.moveLevel ? (this.moveLevel > 0 ? 1 : -1) : 0;
+        this.newLevel = Math.max(Math.min(this.initialLevel + this.moveLevel, options.maxLevel), 1);
+
+
+        // Move out
+        if (this.moveDirection < 0 && (containerLevel - this.newLevel) === 1) {
+            const isLastItem = isLast(items, source);
+
+            if (isLastItem) {
+                console.log('move', containerLevel, this.currentLevel);
+
+                insertAfter(container.parentNode, source);
+                this.currentLevel = containerLevel;
+            }
+        }
+        // Move in
+        else if (this.moveDirection > 0) {
+            if (containerLevel + nestedLevel < options.maxLevel && !isFirst(items, source)) {
+                console.log('Можно двигать');
+            }
+        }
     }
-    else if (!this.pointEl.length || !this.pointEl.hasClass(opt.itemClass)) {
-      return;
+}
+
+function getContainerLevel(containers, container) {
+    let level = 1;
+
+    while (container) {
+        container = closest(container.parentNode, containers);
+
+        if (container) {
+            level += 1;
+        }
     }
-  }
+
+    return level;
+}
+
+function getItemNestedLevel(item, nestedSelector) {
+    let maxLevel = 0;
+
+    const container = item.querySelector(nestedSelector);
+
+    if (container) {
+        const items = [...container.children];
+
+        items.forEach((item) => {
+            let level = 1 + getItemNestedLevel(item, nestedSelector);
+
+            if (level > maxLevel) {
+                maxLevel = level;
+            }
+        });
+    }
+
+    return maxLevel;
+}
+
+function insertAfter(el, nextEl) {
+    if (el && nextEl) {
+        el.after(nextEl);
+    }
+}
+
+function index(items, element) {
+    return Array.prototype.indexOf.call(items || element.parentNode.children, element);
+}
+
+function isFirst(items, element) {
+    const i = index(items, element);
+
+    return i === 0;
+}
+
+function isLast(items, element) {
+    const i = index(items, element);
+
+    return i === items.length - 1;
 }
