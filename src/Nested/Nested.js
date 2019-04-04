@@ -154,16 +154,31 @@ export default class Nested extends Sortable {
             const isLastItem = isLast(items, source);
 
             if (isLastItem) {
-                console.log('move', containerLevel, this.currentLevel);
+                const indentOut = (Math.abs(this.distanceX) <= (this.options.indent/2)) ? (this.options.indent/2) : (this.options.indent/2)*this.currentLevel;
 
-                insertAfter(container.parentNode, source);
-                this.currentLevel = containerLevel;
+                console.log('indent', -this.distanceX, indentOut);
+
+                if(indentOut === -this.distanceX) {
+                    console.log('move', containerLevel, this.currentLevel);
+
+                    insertAfter(container.parentNode, source);
+                    this.currentLevel = containerLevel;
+                }
             }
         }
         // Move in
         else if (this.moveDirection > 0) {
             if (containerLevel + nestedLevel < options.maxLevel && !isFirst(items, source)) {
-                console.log('Можно двигать');
+                const indentIn = (this.distanceX <= (this.options.indent/2)) ? (this.options.indent/2) : (this.options.indent/2)*this.currentLevel;
+
+                console.log('indent', this.distanceX, indentIn);
+
+                if(indentIn === this.distanceX) {
+                    const containerClass = `.${ this.getClassNameFor('container:nested') }`;
+                    const container = source.previousSibling.querySelector(containerClass);
+
+                    insertBefore(container, source);
+                }
             }
         }
     }
@@ -208,6 +223,14 @@ function insertAfter(el, nextEl) {
         el.after(nextEl);
     }
 }
+
+function insertBefore(el, prevEl) {
+    if (el && prevEl) {
+        el.append(prevEl);
+    }
+}
+
+
 
 function index(items, element) {
     return Array.prototype.indexOf.call(items || element.parentNode.children, element);
