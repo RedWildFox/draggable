@@ -9,7 +9,7 @@ export default function SimpleList() {
     return false;
   }
 
-  console.log(containers);
+  // console.log(containers);
 
   const nested = new Nested(containers, {
     draggable: '.StackedListItem--isDraggable',

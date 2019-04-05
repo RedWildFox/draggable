@@ -15,7 +15,8 @@ const defaultClasses = {
 
 const defaultOptions = {
     indent: 60,
-    maxLevel: 3,
+    maxLevel: 4,
+    containerTag: 'ul',
 };
 
 export default class Nested extends Sortable {
@@ -37,29 +38,6 @@ export default class Nested extends Sortable {
          * @property startIndex
          * @type {Number}
          */
-        // this.indentMove = this.options.indent / 2;
-
-        // this.mouse = {
-        //   offsetX: 0,
-        //   startX: 0,
-        //   lastX: 0,
-        //   nowX: 0,
-        //   indentLevelX: 0,
-        //   distY: 0,
-        //   dirAx: 0,
-        //   dirX: 0,
-        //   lastDirX: 0,
-        //   distAxX: 0,
-        // };
-
-        // this.isTouch    = false;
-        // this.moving     = false;
-        // this.dragEl     = null;
-        // this.dragRootEl = null;
-        // this.dragDepth  = 0;
-        // this.hasNewRoot = false;
-        // this.pointEl    = null;
-
         this[onDragStart] = this[onDragStart].bind(this);
         this[onDragStop] = this[onDragStop].bind(this);
         this[onDragMove] = this[onDragMove].bind(this);
@@ -113,7 +91,7 @@ export default class Nested extends Sortable {
 
         const level = getContainerLevel(this.containers, overContainer);
 
-        this.initialLevel = level;
+        // this.initialLevel = level;
         this.currentLevel = level;
     }
 
@@ -133,52 +111,107 @@ export default class Nested extends Sortable {
      * @param {DragStopEvent} event - Drag stop event
      */
     [onDragMove](event) {
-        const { options, nestedLevel } = this;
+        const { options, nestedLevel, currentLevel } = this;
         const { sensorEvent, source } = event;
 
         const container = source.parentNode;
         const items = this.getDraggableElementsForContainer(container);
 
-        const containerLevel = getContainerLevel(this.containers, container);
+        // const containerLevel = getContainerLevel(this.containers, container); // same as this.currentLevel
 
         this.lastX = sensorEvent.clientX;
 
         this.distanceX = this.lastX - this.startX;
-        this.moveLevel = Math.round(this.distanceX / (options.indent / 2));
+        this.moveLevel = Math.round(this.distanceX / options.indent);
         this.moveDirection = this.moveLevel ? (this.moveLevel > 0 ? 1 : -1) : 0;
         this.newLevel = Math.max(Math.min(this.initialLevel + this.moveLevel, options.maxLevel), 1);
 
 
+        // TODO ТУТ НАДО РАЗОБРАТСЯ!!!!
+
+        const getAllowItem = ({ move, sourceItem, firstMove }) =>{
+            let allowItem = sourceItem;
+
+            const container = sourceItem.parentNode;
+            const items = this.getDraggableElementsForContainer(container);
+
+            console.log({
+                move,
+                current: this.currentLevel,
+                need: this.newLevel,
+                sourceItem,
+                firstMove,
+            });
+
+            // Out
+            if (move < 0) {
+
+                // this.currentLevel = - 1;
+
+                // not allow out not last item
+                if (!isLast(items, sourceItem)) {
+                    return sourceItem;
+                }
+
+                const closestItem = closest(container, options.draggable);
+
+                if (closestItem) {
+                    allowItem = getAllowItem({ move: move + 1, sourceItem: closestItem });
+                }
+            }
+            // In
+            else if (move > 0) {
+
+                // this.currentLevel = + 1;
+
+                if(isFirst(items, sourceItem)) {
+                    return sourceItem;
+                }
+
+                const closestItem = firstMove ? sourceItem.previousSibling : sourceItem.lastChild.lastChild;
+
+                if (closestItem) {
+                    allowItem = getAllowItem({ move: move - 1, sourceItem: closestItem });
+                }
+            }
+
+            return allowItem;
+        };
+
+        const toItem = getAllowItem({ move: (this.newLevel - this.currentLevel), sourceItem: source, firstMove: true });
+
+
+        this.allowedLevel = this.newLevel;
+
+        // console.log({ toItem, intiial: this.initialLevel, current: currentLevel, move: this.moveLevel, need: this.newLevel, allow: this.allowedLevel });
+
         // Move out
-        if (this.moveDirection < 0 && (containerLevel - this.newLevel) === 1) {
+        if (this.moveDirection < 0 && (currentLevel - this.allowedLevel) === 1) {
             const isLastItem = isLast(items, source);
 
-            if (isLastItem) {
-                const indentOut = (Math.abs(this.distanceX) <= (this.options.indent/2)) ? (this.options.indent/2) : (this.options.indent/2)*this.currentLevel;
-
-                console.log('indent', -this.distanceX, indentOut);
-
-                if(indentOut === -this.distanceX) {
-                    console.log('move', containerLevel, this.currentLevel);
-
-                    insertAfter(container.parentNode, source);
-                    this.currentLevel = containerLevel;
-                }
+            if (isLastItem && toItem !== source) {
+                insertAfter(toItem, source);
             }
         }
         // Move in
         else if (this.moveDirection > 0) {
-            if (containerLevel + nestedLevel < options.maxLevel && !isFirst(items, source)) {
-                const indentIn = (this.distanceX <= (this.options.indent/2)) ? (this.options.indent/2) : (this.options.indent/2)*this.currentLevel;
+            if (currentLevel + nestedLevel < options.maxLevel && !isFirst(items, source) && toItem !== source) {
+                const containerClass = `.${ this.getClassNameFor('container:nested') }`;
+                let container = toItem.querySelector(containerClass);
 
-                console.log('indent', this.distanceX, indentIn);
+                if (!container) {
+                    let prevEl = source.previousSibling;
 
-                if(indentIn === this.distanceX) {
-                    const containerClass = `.${ this.getClassNameFor('container:nested') }`;
-                    const container = source.previousSibling.querySelector(containerClass);
+                    container = document.createElement(options.containerTag);
+                    container.setAttribute('class', this.getClassNameFor('container:nested'));
+                    container.appendChild(source);
 
-                    insertBefore(container, source);
+                    prevEl.appendChild(container);
+
+                    this.addContainer(container);
                 }
+
+                container.appendChild(source);
             }
         }
     }
@@ -226,11 +259,9 @@ function insertAfter(el, nextEl) {
 
 function insertBefore(el, prevEl) {
     if (el && prevEl) {
-        el.append(prevEl);
+        el.before(prevEl);
     }
 }
-
-
 
 function index(items, element) {
     return Array.prototype.indexOf.call(items || element.parentNode.children, element);

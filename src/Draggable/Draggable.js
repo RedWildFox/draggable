@@ -332,8 +332,18 @@ export default class Draggable {
      * @param {HTMLElement} container
      * @return {HTMLElement[]}
      */
-    getDraggableElementsForContainer(container) {
-        const allDraggableElements = container.querySelectorAll(this.options.draggable);
+    getDraggableElementsForContainer(container, withNested) {
+        let allDraggableElements;
+
+        if (withNested) {
+            allDraggableElements = container.querySelectorAll(this.options.draggable);
+        }
+        else {
+            allDraggableElements = [...container.children].filter((child) => {
+                return child.parentNode.closest(this.options.draggable) === container.closest(this.options.draggable);
+            });
+        }
+
 
         return [...allDraggableElements].filter((childElement) => {
             return childElement !== this.originalSource && childElement !== this.mirror;
