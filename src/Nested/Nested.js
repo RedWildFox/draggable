@@ -119,14 +119,6 @@ export default class Nested extends Sortable {
 
         // const containerLevel = getContainerLevel(this.containers, container); // same as this.currentLevel
 
-        this.lastX = sensorEvent.clientX;
-
-        this.distanceX = this.lastX - this.startX;
-        this.moveLevel = Math.round(this.distanceX / options.indent);
-        this.moveDirection = this.moveLevel ? (this.moveLevel > 0 ? 1 : -1) : 0;
-        this.newLevel = Math.max(Math.min(this.initialLevel + this.moveLevel, options.maxLevel), 1);
-
-
         // TODO ТУТ НАДО РАЗОБРАТСЯ!!!!
 
         const getAllowItem = ({ move, sourceItem, firstMove }) =>{
@@ -146,8 +138,6 @@ export default class Nested extends Sortable {
             // Out
             if (move < 0) {
 
-                // this.currentLevel = - 1;
-
                 // not allow out not last item
                 if (!isLast(items, sourceItem)) {
                     return sourceItem;
@@ -156,14 +146,13 @@ export default class Nested extends Sortable {
                 const closestItem = closest(container, options.draggable);
 
                 if (closestItem) {
+                    console.error('move < 0');
+                    this.currentLevel = this.newLevel;
                     allowItem = getAllowItem({ move: move + 1, sourceItem: closestItem });
                 }
             }
             // In
             else if (move > 0) {
-
-                // this.currentLevel = + 1;
-
                 if(isFirst(items, sourceItem)) {
                     return sourceItem;
                 }
@@ -171,6 +160,8 @@ export default class Nested extends Sortable {
                 const closestItem = firstMove ? sourceItem.previousSibling : sourceItem.lastChild.lastChild;
 
                 if (closestItem) {
+                    console.error('move > 0');
+                    this.currentLevel = this.newLevel;
                     allowItem = getAllowItem({ move: move - 1, sourceItem: closestItem });
                 }
             }
@@ -180,13 +171,25 @@ export default class Nested extends Sortable {
 
         const toItem = getAllowItem({ move: (this.newLevel - this.currentLevel), sourceItem: source, firstMove: true });
 
+        this.prevX = this.lastX;
+        this.lastX = sensorEvent.clientX;
 
-        this.allowedLevel = this.newLevel;
+        this.distanceX = this.lastX - this.startX;
+        this.moveLevel = Math.round(this.distanceX / options.indent);
+        this.moveDirection = (this.lastX - this.prevX) > 0 ? 1 : -1;
+        this.newLevel = Math.max(Math.min(this.initialLevel + this.moveLevel, options.maxLevel), 1);
 
-        // console.log({ toItem, intiial: this.initialLevel, current: currentLevel, move: this.moveLevel, need: this.newLevel, allow: this.allowedLevel });
+        console.log({
+            moveDirection: this.moveDirection,
+            moveLevel: this.moveLevel,
+            distanceX: this.distanceX,
+            prev: this.prevX,
+            last: this.lastX
+        });
+
 
         // Move out
-        if (this.moveDirection < 0 && (currentLevel - this.allowedLevel) === 1) {
+        if (this.moveDirection < 0) {
             const isLastItem = isLast(items, source);
 
             if (isLastItem && toItem !== source) {
