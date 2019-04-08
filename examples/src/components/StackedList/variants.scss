@@ -249,7 +249,7 @@
 
   &.draggable-mirror {
     z-index: get-z-index(overlay);
-    transition: width get-duration() get-easing(bungie), height get-duration() get-easing(bungie);
+    //transition: width get-duration() get-easing(bungie), height get-duration() get-easing(bungie);
 
     .StackedListContent {
       height: 100%;

@@ -8,6 +8,8 @@ const onDragStart = Symbol('onDragStart');
 const onDragStop = Symbol('onDragStop');
 const onDragMove = Symbol('onDragMove');
 const onDragOverContainer = Symbol('onDragOverContainer');
+const onDragOver = Symbol('onDragOver');
+const DragOutEvent = Symbol('DragOutEvent');
 
 const defaultClasses = {
     'container:nested': 'NestedList',
@@ -39,14 +41,18 @@ export default class Nested extends Sortable {
          * @type {Number}
          */
         this[onDragStart] = this[onDragStart].bind(this);
-        this[onDragStop] = this[onDragStop].bind(this);
         this[onDragMove] = this[onDragMove].bind(this);
+        this[onDragStop] = this[onDragStop].bind(this);
         this[onDragOverContainer] = this[onDragOverContainer].bind(this);
+        this[DragOutEvent] = this[DragOutEvent].bind(this);
+        this[onDragOver] = this[onDragOver].bind(this);
 
 
         this.on('drag:start', this[onDragStart])
             .on('drag:move', this[onDragMove])
             .on('drag:stop', this[onDragStop])
+            .on('drag:over', this[onDragOver])
+            .on('drag:out', this[DragOutEvent])
             .on('drag:over:container', this[onDragOverContainer]);
     }
 
@@ -57,8 +63,10 @@ export default class Nested extends Sortable {
         super.destroy();
 
         this.off('drag:start', this[onDragStart])
-            .off('drag:stop', this[onDragStop])
             .off('drag:move', this[onDragMove])
+            .off('drag:stop', this[onDragStop])
+            .off('drag:over', this[onDragOver])
+            .off('drag:out', this[DragOutEvent])
             .off('drag:over:container', this[onDragOverContainer]);
     }
 
@@ -102,7 +110,28 @@ export default class Nested extends Sortable {
      * @param {DragStopEvent} event - Drag stop event
      */
     [onDragStop](event) {
-        // console.log('nested onDragOver', event);
+        // TODO!! проверить целесообразность.
+        if (this.containerEmpty.childNodes.length === 1) {
+            this.containerEmpty.remove();
+        }
+    }
+
+    /**
+     * Drag out handler
+     * @private
+     * @param {DragOutEvent} event - Drag out event
+     */
+    [DragOutEvent](event) {
+        // console.warn('DragOutEvent', event);
+    }
+
+    /**
+     * Drag over handler
+     * @private
+     * @param {DragOverEvent} event - Drag over event
+     */
+    [onDragOver](event) {
+        // console.warn('onDragOver', event);
     }
 
     /**
@@ -117,27 +146,22 @@ export default class Nested extends Sortable {
         const container = source.parentNode;
         const items = this.getDraggableElementsForContainer(container);
 
-        // const containerLevel = getContainerLevel(this.containers, container); // same as this.currentLevel
-
-        // TODO ТУТ НАДО РАЗОБРАТСЯ!!!!
-
         const getAllowItem = ({ move, sourceItem, firstMove }) =>{
             let allowItem = sourceItem;
 
             const container = sourceItem.parentNode;
             const items = this.getDraggableElementsForContainer(container);
 
-            console.log({
-                move,
-                current: this.currentLevel,
-                need: this.newLevel,
-                sourceItem,
-                firstMove,
-            });
+            // console.log({
+            //     move,
+            //     current: this.currentLevel,
+            //     need: this.newLevel,
+            //     sourceItem,
+            //     firstMove,
+            // });
 
             // Out
             if (move < 0) {
-
                 // not allow out not last item
                 if (!isLast(items, sourceItem)) {
                     return sourceItem;
@@ -146,8 +170,6 @@ export default class Nested extends Sortable {
                 const closestItem = closest(container, options.draggable);
 
                 if (closestItem) {
-                    console.error('move < 0');
-                    this.currentLevel = this.newLevel;
                     allowItem = getAllowItem({ move: move + 1, sourceItem: closestItem });
                 }
             }
@@ -160,8 +182,6 @@ export default class Nested extends Sortable {
                 const closestItem = firstMove ? sourceItem.previousSibling : sourceItem.lastChild.lastChild;
 
                 if (closestItem) {
-                    console.error('move > 0');
-                    this.currentLevel = this.newLevel;
                     allowItem = getAllowItem({ move: move - 1, sourceItem: closestItem });
                 }
             }
@@ -169,7 +189,8 @@ export default class Nested extends Sortable {
             return allowItem;
         };
 
-        const toItem = getAllowItem({ move: (this.newLevel - this.currentLevel), sourceItem: source, firstMove: true });
+        const move = this.newLevel - (this.currentLevel + nestedLevel);
+        const toItem = getAllowItem({ move, sourceItem: source, firstMove: true });
 
         this.prevX = this.lastX;
         this.lastX = sensorEvent.clientX;
@@ -179,20 +200,20 @@ export default class Nested extends Sortable {
         this.moveDirection = (this.lastX - this.prevX) > 0 ? 1 : -1;
         this.newLevel = Math.max(Math.min(this.initialLevel + this.moveLevel, options.maxLevel), 1);
 
-        console.log({
-            moveDirection: this.moveDirection,
-            moveLevel: this.moveLevel,
-            distanceX: this.distanceX,
-            prev: this.prevX,
-            last: this.lastX
-        });
-
+        // console.log({
+        //     moveDirection: this.moveDirection,
+        //     sdf: nestedLevel
+        // });
 
         // Move out
         if (this.moveDirection < 0) {
             const isLastItem = isLast(items, source);
 
             if (isLastItem && toItem !== source) {
+                this.currentLevel = this.newLevel;
+
+                // TODO!! проверить целесообразность.
+                this.containerEmpty = container;
                 insertAfter(toItem, source);
             }
         }
@@ -203,6 +224,7 @@ export default class Nested extends Sortable {
                 let container = toItem.querySelector(containerClass);
 
                 if (!container) {
+                    this.currentLevel = this.newLevel;
                     let prevEl = source.previousSibling;
 
                     container = document.createElement(options.containerTag);

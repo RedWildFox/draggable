@@ -183,6 +183,11 @@ export default class Sortable extends Draggable {
      * @param {DragOverEvent} event - Drag over event
      */
     [onDragOver](event) {
+        console.log('onDragOver', event);
+        const containerClass = `.${ this.getClassNameFor('container:nested') }`;
+        let container = event.over.querySelector(containerClass);
+        console.warn('container', container);
+
         if (event.over === event.originalSource || event.over === event.source) {
             return;
         }

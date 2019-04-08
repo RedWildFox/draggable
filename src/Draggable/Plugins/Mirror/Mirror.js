@@ -27,6 +27,8 @@ export const getAppendableContainer = Symbol('getAppendableContainer');
  * @type {Object}
  */
 export const defaultOptions = {
+  constrainDimensionsHeight: false,
+  constrainDimensionsWidth: false,
   constrainDimensions: false,
   xAxis: true,
   yAxis: true,
@@ -369,9 +371,17 @@ function resetMirror({mirror, source, options, ...args}) {
     let offsetWidth;
 
     if (options.constrainDimensions) {
-      const computedSourceStyles = getComputedStyle(source);
-      offsetHeight = computedSourceStyles.getPropertyValue('height');
-      offsetWidth = computedSourceStyles.getPropertyValue('width');
+        options.constrainDimensionsHeight = true;
+        options.constrainDimensionsWidth  = true;
+    }
+
+    if (options.constrainDimensionsHeight ) {
+        const computedSourceStyles = getComputedStyle(source);
+        offsetHeight = computedSourceStyles.getPropertyValue('height');
+    }
+    else if(options.constrainDimensionsWidth) {
+        const computedSourceStyles = getComputedStyle(source);
+        offsetWidth = computedSourceStyles.getPropertyValue('width');
     }
 
     mirror.style.position = 'fixed';
@@ -380,8 +390,10 @@ function resetMirror({mirror, source, options, ...args}) {
     mirror.style.left = 0;
     mirror.style.margin = 0;
 
-    if (options.constrainDimensions) {
+    if (options.constrainDimensionsHeight) {
       mirror.style.height = offsetHeight;
+    }
+    else if(options.constrainDimensionsWidth) {
       mirror.style.width = offsetWidth;
     }
 

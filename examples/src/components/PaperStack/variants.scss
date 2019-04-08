@@ -69,7 +69,7 @@
       color: white;
       background-color: get-color(brand, blue);
       border-color: get-color(brand, blue);
-      transform: paper-stack-item(transform, mirror);
+      //transform: paper-stack-item(transform, mirror);
 
       &::after {
         content: none;

@@ -13,10 +13,13 @@ export default function SimpleList() {
 
   const nested = new Nested(containers, {
     draggable: '.StackedListItem--isDraggable',
+      delay: 20,
     mirror: {
       appendTo: containerSelector,
-      constrainDimensions: true,
+      constrainDimensionsWidth: true,
     },
+      indent: 60,
+      maxLevel: 2,
   });
 
   return nested;

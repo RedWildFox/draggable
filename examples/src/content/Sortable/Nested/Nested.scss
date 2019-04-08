@@ -16,4 +16,22 @@ $simple-list-width: 42rem;
 .StackedListItem .NestedList{
   padding-left: 60px;
 }
+.StackedListItem--isDraggable:focus+.StackedListItem .StackedListContent:before,
+.StackedListItem--isDraggable:hover+.StackedListItem .StackedListContent:before {
+    background-color: transparent;
+    color: transparent;
+}
+.StackedListItem--isDraggable:focus .StackedListContent, .StackedListItem--isDraggable:hover .StackedListContent {
+    color: black;
+    background: white;
+}
 
+.StackedListContent:hover, .StackedListContent:hover~.NestedList .StackedListItem--isDraggable .StackedListContent{
+    color: grey !important;
+    background: white;
+    cursor: pointer;
+}
+
+.draggable-mirror {
+    color: rebeccapurple !important;
+}
