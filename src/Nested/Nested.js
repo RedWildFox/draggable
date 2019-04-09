@@ -110,10 +110,7 @@ export default class Nested extends Sortable {
      * @param {DragStopEvent} event - Drag stop event
      */
     [onDragStop](event) {
-        // TODO!! проверить целесообразность.
-        if (this.containerEmpty.childNodes.length === 1) {
-            this.containerEmpty.remove();
-        }
+
     }
 
     /**
@@ -143,22 +140,21 @@ export default class Nested extends Sortable {
         const { options, nestedLevel, currentLevel } = this;
         const { sensorEvent, source } = event;
 
+        this.prevX = this.lastX;
+        this.lastX = sensorEvent.clientX;
+
+        this.distanceX = this.lastX - this.startX;
+        this.moveLevel = Math.round(this.distanceX / options.indent);
+
+        this.moveDirection = (this.lastX - this.prevX) > 0 ? 1 : -1;
+        this.newLevel = Math.max(Math.min(this.initialLevel + this.moveLevel, options.maxLevel), 1);
+
+        const containerClass = `.${ this.getClassNameFor('container:nested') }`;
         const container = source.parentNode;
         const items = this.getDraggableElementsForContainer(container);
 
-        const getAllowItem = ({ move, sourceItem, firstMove }) =>{
+        const getAllowItem = ({ move, sourceItem, fromRecursion }) =>{
             let allowItem = sourceItem;
-
-            const container = sourceItem.parentNode;
-            const items = this.getDraggableElementsForContainer(container);
-
-            // console.log({
-            //     move,
-            //     current: this.currentLevel,
-            //     need: this.newLevel,
-            //     sourceItem,
-            //     firstMove,
-            // });
 
             // Out
             if (move < 0) {
@@ -175,63 +171,66 @@ export default class Nested extends Sortable {
             }
             // In
             else if (move > 0) {
-                if(isFirst(items, sourceItem)) {
+                if (isFirst(items, sourceItem)) {
                     return sourceItem;
                 }
 
-                const closestItem = firstMove ? sourceItem.previousSibling : sourceItem.lastChild.lastChild;
+                let target = fromRecursion ? sourceItem : sourceItem.previousSibling;
 
-                if (closestItem) {
-                    allowItem = getAllowItem({ move: move - 1, sourceItem: closestItem });
+                if (!items.includes(target)) {
+                    target = target.previousSibling || target.nextSibling;
+                }
+
+                console.log({
+                    fromRecursion,
+                    itemInclude: items.includes(target),
+                    target
+                });
+                const container = target.querySelector(containerClass);
+
+                // TODO!!! тут у нас бага с тем что container.lastChild не существует?? Как он может игнорировать условие???
+                if (move <= 1 || !container || !container.lastChild) {
+                    return target;
+                }
+                else {
+                    return getAllowItem({ move: move - 1, sourceItem: container.lastChild, fromRecursion: true });
                 }
             }
 
             return allowItem;
         };
 
-        const move = this.newLevel - (this.currentLevel + nestedLevel);
+        const move = this.newLevel - this.currentLevel;
+
         const toItem = getAllowItem({ move, sourceItem: source, firstMove: true });
 
-        this.prevX = this.lastX;
-        this.lastX = sensorEvent.clientX;
-
-        this.distanceX = this.lastX - this.startX;
-        this.moveLevel = Math.round(this.distanceX / options.indent);
-        this.moveDirection = (this.lastX - this.prevX) > 0 ? 1 : -1;
-        this.newLevel = Math.max(Math.min(this.initialLevel + this.moveLevel, options.maxLevel), 1);
-
-        // console.log({
-        //     moveDirection: this.moveDirection,
-        //     sdf: nestedLevel
-        // });
+        if (toItem === source) {
+            return;
+        }
 
         // Move out
         if (this.moveDirection < 0) {
             const isLastItem = isLast(items, source);
 
-            if (isLastItem && toItem !== source) {
+            if (isLastItem) {
                 this.currentLevel = this.newLevel;
 
-                // TODO!! проверить целесообразность.
-                this.containerEmpty = container;
                 insertAfter(toItem, source);
             }
         }
         // Move in
         else if (this.moveDirection > 0) {
-            if (currentLevel + nestedLevel < options.maxLevel && !isFirst(items, source) && toItem !== source) {
-                const containerClass = `.${ this.getClassNameFor('container:nested') }`;
+            if (currentLevel + nestedLevel < options.maxLevel && !isFirst(items, source)) {
                 let container = toItem.querySelector(containerClass);
 
                 if (!container) {
                     this.currentLevel = this.newLevel;
-                    let prevEl = source.previousSibling;
 
                     container = document.createElement(options.containerTag);
                     container.setAttribute('class', this.getClassNameFor('container:nested'));
                     container.appendChild(source);
 
-                    prevEl.appendChild(container);
+                    toItem.appendChild(container);
 
                     this.addContainer(container);
                 }
