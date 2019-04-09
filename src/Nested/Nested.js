@@ -83,8 +83,6 @@ export default class Nested extends Sortable {
         const nestedLevel = getItemNestedLevel(source, containerClass);
 
         this.startX = sensorEvent.clientX;
-
-        this.initialLevel = level;
         this.currentLevel = level;
         this.nestedLevel  = nestedLevel;
     }
@@ -99,7 +97,6 @@ export default class Nested extends Sortable {
 
         const level = getContainerLevel(this.containers, overContainer);
 
-        // this.initialLevel = level;
         this.currentLevel = level;
     }
 
@@ -147,7 +144,7 @@ export default class Nested extends Sortable {
         this.moveLevel = Math.round(this.distanceX / options.indent);
 
         this.moveDirection = (this.lastX - this.prevX) > 0 ? 1 : -1;
-        this.newLevel = Math.max(Math.min(this.initialLevel + this.moveLevel, options.maxLevel), 1);
+        this.newLevel = Math.max(Math.min(this.currentLevel + this.moveLevel, options.maxLevel), 1);
 
         const containerClass = `.${ this.getClassNameFor('container:nested') }`;
         const container = source.parentNode;
@@ -181,15 +178,9 @@ export default class Nested extends Sortable {
                     target = target.previousSibling || target.nextSibling;
                 }
 
-                console.log({
-                    fromRecursion,
-                    itemInclude: items.includes(target),
-                    target
-                });
                 const container = target.querySelector(containerClass);
 
-                // TODO!!! тут у нас бага с тем что container.lastChild не существует?? Как он может игнорировать условие???
-                if (move <= 1 || !container || !container.lastChild) {
+                if (move <= 1 || !container || !container.lastChild || !items.includes(container.lastChild)) {
                     return target;
                 }
                 else {
@@ -220,11 +211,17 @@ export default class Nested extends Sortable {
         }
         // Move in
         else if (this.moveDirection > 0) {
+            console.log({
+                maxLevel: options.maxLevel,
+                currentLevel,
+                nestedLevel
+            });
             if (currentLevel + nestedLevel < options.maxLevel && !isFirst(items, source)) {
+                console.error('Да твобю мать!!');
                 let container = toItem.querySelector(containerClass);
+                this.currentLevel = this.newLevel;
 
                 if (!container) {
-                    this.currentLevel = this.newLevel;
 
                     container = document.createElement(options.containerTag);
                     container.setAttribute('class', this.getClassNameFor('container:nested'));
