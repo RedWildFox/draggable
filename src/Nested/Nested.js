@@ -1,8 +1,7 @@
 import {closest} from '../shared/utils';
 
-import Sortable from '../Sortable';
+import Draggable from '../Draggable';
 import {NestedInEvent, NestedOutEvent} from './NestedEvent';
-import {DragOverEvent,DragOverContainerEvent} from '../Draggable/DragEvent';
 
 const onDragStart = Symbol('onDragStart');
 const onDragStop = Symbol('onDragStop');
@@ -21,7 +20,7 @@ const defaultOptions = {
     containerTag: 'ul',
 };
 
-export default class Nested extends Sortable {
+export default class Nested extends Draggable {
     constructor(containers = [], options = {}) {
         super(containers, {
             ...defaultOptions,
@@ -84,6 +83,7 @@ export default class Nested extends Sortable {
 
         this.startX = sensorEvent.clientX;
         this.currentLevel = level;
+        this.initialLevel = level;
         this.nestedLevel  = nestedLevel;
     }
 
@@ -125,7 +125,18 @@ export default class Nested extends Sortable {
      * @param {DragOverEvent} event - Drag over event
      */
     [onDragOver](event) {
-        // console.warn('onDragOver', event);
+        // sortable
+        const {source, over, overContainer} = event;
+        if (event.over === event.originalSource || event.over === event.source) {
+            return;
+        }
+
+        const children = this.getDraggableElementsForContainer(overContainer);
+        const moves = move({source, over, overContainer, children});
+
+        if (!moves) {
+            return;
+        }
     }
 
     /**
@@ -142,9 +153,8 @@ export default class Nested extends Sortable {
 
         this.distanceX = this.lastX - this.startX;
         this.moveLevel = Math.round(this.distanceX / options.indent);
-
         this.moveDirection = (this.lastX - this.prevX) > 0 ? 1 : -1;
-        this.newLevel = Math.max(Math.min(this.currentLevel + this.moveLevel, options.maxLevel), 1);
+        this.newLevel = Math.max(Math.min(this.initialLevel + this.moveLevel, options.maxLevel), 1);
 
         const containerClass = `.${ this.getClassNameFor('container:nested') }`;
         const container = source.parentNode;
@@ -152,7 +162,6 @@ export default class Nested extends Sortable {
 
         const getAllowItem = ({ move, sourceItem, fromRecursion }) =>{
             let allowItem = sourceItem;
-
             // Out
             if (move < 0) {
                 // not allow out not last item
@@ -211,18 +220,11 @@ export default class Nested extends Sortable {
         }
         // Move in
         else if (this.moveDirection > 0) {
-            console.log({
-                maxLevel: options.maxLevel,
-                currentLevel,
-                nestedLevel
-            });
             if (currentLevel + nestedLevel < options.maxLevel && !isFirst(items, source)) {
-                console.error('Да твобю мать!!');
                 let container = toItem.querySelector(containerClass);
                 this.currentLevel = this.newLevel;
 
                 if (!container) {
-
                     container = document.createElement(options.containerTag);
                     container.setAttribute('class', this.getClassNameFor('container:nested'));
                     container.appendChild(source);
@@ -298,4 +300,60 @@ function isLast(items, element) {
     const i = index(items, element);
 
     return i === items.length - 1;
+}
+
+// sortable
+function move({source, over, overContainer, children}) {
+    const emptyOverContainer = !children.length;
+    const differentContainer = source.parentNode !== overContainer;
+    const sameContainer = over && !differentContainer;
+
+    if (emptyOverContainer) {
+        return moveInsideEmptyContainer(source, overContainer);
+    } else if (sameContainer) {
+        return moveWithinContainer(source, over);
+    } else if (differentContainer) {
+        return moveOutsideContainer(source, over, overContainer);
+    } else {
+        return null;
+    }
+}
+
+function moveInsideEmptyContainer(source, overContainer) {
+    const oldContainer = source.parentNode;
+
+    overContainer.appendChild(source);
+
+    return {oldContainer, newContainer: overContainer};
+}
+
+function moveWithinContainer(source, over) {
+    const oldIndex = index(source);
+    const newIndex = index(over);
+
+    if (oldIndex < newIndex) {
+        if (over.nextElementSibling && over.nextElementSibling.parentNode == source.parentNode) {
+            source.parentNode.insertBefore(source, over.nextElementSibling);
+        }
+    }
+    else {
+        if (over && over.parentNode == source.parentNode) {
+            source.parentNode.insertBefore(source, over);
+        }
+    }
+
+    return {oldContainer: source.parentNode, newContainer: source.parentNode};
+}
+
+function moveOutsideContainer(source, over, overContainer) {
+    const oldContainer = source.parentNode;
+
+    if (over) {
+        over.parentNode.insertBefore(source, over);
+    } else {
+        // need to figure out proper position
+        overContainer.appendChild(source);
+    }
+
+    return {oldContainer, newContainer: source.parentNode};
 }

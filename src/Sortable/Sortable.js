@@ -183,11 +183,6 @@ export default class Sortable extends Draggable {
      * @param {DragOverEvent} event - Drag over event
      */
     [onDragOver](event) {
-        // console.log('onDragOver', event);
-        const containerClass = `.${ this.getClassNameFor('container:nested') }`;
-        let container = event.over.querySelector(containerClass);
-        // console.warn('container', container);
-
         if (event.over === event.originalSource || event.over === event.source) {
             return;
         }
@@ -282,23 +277,10 @@ function moveWithinContainer(source, over) {
     const oldIndex = index(source);
     const newIndex = index(over);
 
-    // console.log('mode', {
-    //     source,
-    //     over,
-    //     parent: source.parentNode,
-    //     next: over.nextElementSibling
-    // });
-
-    // TODO!!! Тут проверит
     if (oldIndex < newIndex) {
-        if (over.nextElementSibling && over.nextElementSibling.parentNode == source.parentNode) {
-            source.parentNode.insertBefore(source, over.nextElementSibling);
-        }
-    }
-    else {
-        if (over && over.parentNode == source.parentNode) {
-            source.parentNode.insertBefore(source, over);
-        }
+        source.parentNode.insertBefore(source, over.nextElementSibling);
+    } else {
+        source.parentNode.insertBefore(source, over);
     }
 
     return {oldContainer: source.parentNode, newContainer: source.parentNode};

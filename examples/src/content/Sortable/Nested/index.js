@@ -19,7 +19,7 @@ export default function SimpleList() {
       constrainDimensionsWidth: true,
     },
       indent: 60,
-      maxLevel: 3,
+      maxLevel: 5,
   });
 
   return nested;
