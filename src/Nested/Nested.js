@@ -4,11 +4,9 @@ import Draggable from '../Draggable';
 import {NestedInEvent, NestedOutEvent} from './NestedEvent';
 
 const onDragStart = Symbol('onDragStart');
-const onDragStop = Symbol('onDragStop');
 const onDragMove = Symbol('onDragMove');
 const onDragOverContainer = Symbol('onDragOverContainer');
 const onDragOver = Symbol('onDragOver');
-const DragOutEvent = Symbol('DragOutEvent');
 
 const defaultClasses = {
     'container:nested': 'NestedList',
@@ -41,17 +39,13 @@ export default class Nested extends Draggable {
          */
         this[onDragStart] = this[onDragStart].bind(this);
         this[onDragMove] = this[onDragMove].bind(this);
-        this[onDragStop] = this[onDragStop].bind(this);
         this[onDragOverContainer] = this[onDragOverContainer].bind(this);
-        this[DragOutEvent] = this[DragOutEvent].bind(this);
         this[onDragOver] = this[onDragOver].bind(this);
 
 
         this.on('drag:start', this[onDragStart])
             .on('drag:move', this[onDragMove])
-            .on('drag:stop', this[onDragStop])
             .on('drag:over', this[onDragOver])
-            .on('drag:out', this[DragOutEvent])
             .on('drag:over:container', this[onDragOverContainer]);
     }
 
@@ -63,9 +57,7 @@ export default class Nested extends Draggable {
 
         this.off('drag:start', this[onDragStart])
             .off('drag:move', this[onDragMove])
-            .off('drag:stop', this[onDragStop])
             .off('drag:over', this[onDragOver])
-            .off('drag:out', this[DragOutEvent])
             .off('drag:over:container', this[onDragOverContainer]);
     }
 
@@ -100,25 +92,6 @@ export default class Nested extends Draggable {
         this.currentLevel = level;
     }
 
-
-    /**
-     * Drag stop handler
-     * @private
-     * @param {DragStopEvent} event - Drag stop event
-     */
-    [onDragStop](event) {
-
-    }
-
-    /**
-     * Drag out handler
-     * @private
-     * @param {DragOutEvent} event - Drag out event
-     */
-    [DragOutEvent](event) {
-        // console.warn('DragOutEvent', event);
-    }
-
     /**
      * Drag over handler
      * @private
@@ -131,8 +104,8 @@ export default class Nested extends Draggable {
             return;
         }
 
-        const children = this.getDraggableElementsForContainer(overContainer);
-        const moves = move({source, over, overContainer, children});
+        const validNesting = this.currentLevel + this.nestedLevel <= this.options.maxLevel;
+        const moves = move({source, over, overContainer, validNesting});
 
         if (!moves) {
             return;
@@ -280,14 +253,12 @@ function insertAfter(el, nextEl) {
     }
 }
 
-function insertBefore(el, prevEl) {
-    if (el && prevEl) {
-        el.before(prevEl);
-    }
-}
-
 function index(items, element) {
     return Array.prototype.indexOf.call(items || element.parentNode.children, element);
+}
+
+function indexSort(element) {
+    return Array.prototype.indexOf.call(element.parentNode.children, element);
 }
 
 function isFirst(items, element) {
@@ -303,33 +274,22 @@ function isLast(items, element) {
 }
 
 // sortable
-function move({source, over, overContainer, children}) {
-    const emptyOverContainer = !children.length;
+function move({source, over, overContainer, validNesting}) {
     const differentContainer = source.parentNode !== overContainer;
     const sameContainer = over && !differentContainer;
 
-    if (emptyOverContainer) {
-        return moveInsideEmptyContainer(source, overContainer);
-    } else if (sameContainer) {
+    if (sameContainer && validNesting) {
         return moveWithinContainer(source, over);
-    } else if (differentContainer) {
+    } else if (differentContainer && validNesting) {
         return moveOutsideContainer(source, over, overContainer);
     } else {
         return null;
     }
 }
 
-function moveInsideEmptyContainer(source, overContainer) {
-    const oldContainer = source.parentNode;
-
-    overContainer.appendChild(source);
-
-    return {oldContainer, newContainer: overContainer};
-}
-
 function moveWithinContainer(source, over) {
-    const oldIndex = index(source);
-    const newIndex = index(over);
+    const oldIndex = indexSort(source);
+    const newIndex = indexSort(over);
 
     if (oldIndex < newIndex) {
         if (over.nextElementSibling && over.nextElementSibling.parentNode == source.parentNode) {
