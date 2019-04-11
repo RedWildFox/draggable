@@ -24,6 +24,12 @@ const bundles = [
   },
 
   {
+    name: 'Nested',
+    filename: 'nested',
+    source: 'Nested/index',
+  },
+
+  {
     name: 'Swappable',
     filename: 'swappable',
     source: 'Swappable/index',
