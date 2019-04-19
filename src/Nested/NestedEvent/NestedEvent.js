@@ -21,41 +21,51 @@ export class NestedEvent extends AbstractEvent {
 }
 
 /**
- * Nested in event
- * @class NestedStartEvent
- * @module NestedStartEvent
+ * Nested stop event
+ * @class NestedStopEvent
+ * @module NestedStopEvent
  * @extends NestedEvent
  */
-export class NestedInEvent extends NestedEvent {
-  static type = 'nested:in';
+export class NestedStopEvent extends NestedEvent {
+    static type = 'nested:stop';
 
-  /**
-   * Element you put the item
-   * @property nestedElement
-   * @type {Number}
-   * @readonly
-   */
-  get nestedElement() {
-    return this.data.nestedElement;
-  }
-}
+    /**
+     * Original index on Nested start
+     * @property oldIndex
+     * @type {Number}
+     * @readonly
+     */
+    get oldIndex() {
+        return this.data.oldIndex;
+    }
 
-/**
- * Nested sort event
- * @class NestedSortEvent
- * @module NestedSortEvent
- * @extends NestedEvent
- */
-export class NestedOutEvent extends NestedEvent {
-  static type = 'Nested:out';
+    /**
+     * New index of draggable element
+     * @property newIndex
+     * @type {Number}
+     * @readonly
+     */
+    get newIndex() {
+        return this.data.newIndex;
+    }
 
-  /**
-   * Index of current draggable element
-   * @property currentIndex
-   * @type {Number}
-   * @readonly
-   */
-  get nestedElement() {
-    return this.data.nestedElement;
-  }
+    /**
+     * Original container of draggable element
+     * @property oldContainer
+     * @type {HTMLElement}
+     * @readonly
+     */
+    get oldContainer() {
+        return this.data.oldContainer;
+    }
+
+    /**
+     * New container of draggable element
+     * @property newContainer
+     * @type {HTMLElement}
+     * @readonly
+     */
+    get newContainer() {
+        return this.data.newContainer;
+    }
 }

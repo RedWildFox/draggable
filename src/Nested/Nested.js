@@ -1,12 +1,13 @@
 import {closest} from '../shared/utils';
 
-import Draggable from '../Draggable';
-import {NestedInEvent, NestedOutEvent} from './NestedEvent';
+import Draggable, { DragStopEvent } from '../Draggable';
+import { NestedStopEvent } from './NestedEvent';
 
 const onDragStart = Symbol('onDragStart');
 const onDragMove = Symbol('onDragMove');
 const onDragOverContainer = Symbol('onDragOverContainer');
 const onDragOver = Symbol('onDragOver');
+const onDragStop = Symbol('onDragStop');
 
 const defaultClasses = {
     'container:nested': 'NestedList',
@@ -41,16 +42,18 @@ export default class Nested extends Draggable {
         this[onDragMove] = this[onDragMove].bind(this);
         this[onDragOverContainer] = this[onDragOverContainer].bind(this);
         this[onDragOver] = this[onDragOver].bind(this);
+        this[onDragStop] = this[onDragStop].bind(this);
 
 
         this.on('drag:start', this[onDragStart])
             .on('drag:move', this[onDragMove])
             .on('drag:over', this[onDragOver])
-            .on('drag:over:container', this[onDragOverContainer]);
+            .on('drag:over:container', this[onDragOverContainer])
+            .on('drag:stop', this[onDragStop]);
     }
 
     /**
-     * Destroys Sortable instance.
+     * Destroys Nested instance.
      */
     destroy() {
         super.destroy();
@@ -58,7 +61,8 @@ export default class Nested extends Draggable {
         this.off('drag:start', this[onDragStart])
             .off('drag:move', this[onDragMove])
             .off('drag:over', this[onDragOver])
-            .off('drag:over:container', this[onDragOverContainer]);
+            .off('drag:over:container', this[onDragOverContainer])
+            .off('drag:stop', this[onDragStop]);
     }
 
     /**
@@ -77,6 +81,8 @@ export default class Nested extends Draggable {
         this.currentLevel = level;
         this.initialLevel = level;
         this.nestedLevel  = nestedLevel;
+        this.startContainer = event.source.parentNode;
+        this.startIndex = indexSort(event.source);
     }
 
     /**
@@ -210,6 +216,26 @@ export default class Nested extends Draggable {
                 container.appendChild(source);
             }
         }
+    }
+
+    /**
+     * Drag stop handler
+     * @private
+     * @param {DragStopEvent} event - Drag stop event
+     */
+    [onDragStop](event) {
+        const nestedStopEvent = new NestedStopEvent({
+            dragEvent: event,
+            oldIndex: this.startIndex,
+            newIndex: indexSort(event.source),
+            oldContainer: this.startContainer,
+            newContainer: event.source.parentNode,
+        });
+
+        this.trigger(nestedStopEvent);
+
+        this.startIndex = null;
+        this.startContainer = null;
     }
 }
 
