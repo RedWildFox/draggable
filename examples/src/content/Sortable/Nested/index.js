@@ -2,8 +2,8 @@
 import {Nested} from '@shopify/draggable';
 
 export default function SimpleList() {
-  const containerSelector = '.NestedList';
-  const containers = document.querySelectorAll(containerSelector);
+  const containerSelector = 'NestedList';
+  const containers = document.querySelectorAll(`.${ containerSelector }`);
 
   if (containers.length === 0) {
     return false;
@@ -21,6 +21,10 @@ export default function SimpleList() {
       indent: 60,
       maxLevel: 2,
       handle: '.DragHandle',
+      containerTag: 'ul',
+      classes: {
+          'container:nested': containerSelector,
+      },
       mirror: {
           appendTo: containerSelector,
           constrainDimensions: true,
