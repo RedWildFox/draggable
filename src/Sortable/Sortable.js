@@ -157,7 +157,7 @@ export default class Sortable extends Draggable {
         }
 
         const children = this.getDraggableElementsForContainer(overContainer);
-        const moves = move({source, over, overContainer, children});
+        const moves = move({source, over, overContainer, children, options: this.options});
 
         if (!moves) {
             return;
@@ -204,7 +204,7 @@ export default class Sortable extends Draggable {
         }
 
         const children = this.getDraggableElementsForContainer(overContainer);
-        const moves = move({source, over, overContainer, children});
+        const moves = move({source, over, overContainer, children, options: this.options});
 
         if (!moves) {
             return;
@@ -249,16 +249,18 @@ function index(element) {
     return Array.prototype.indexOf.call(element.parentNode.children, element);
 }
 
-function move({source, over, overContainer, children}) {
+function move({source, over, overContainer, children, options}) {
     const emptyOverContainer = !children.length;
     const differentContainer = source.parentNode !== overContainer;
     const sameContainer = over && !differentContainer;
 
-    if (emptyOverContainer) {
+    const childrenEL = source.lastElementChild.classList.contains(options.classes['container:nested']);
+
+    if (emptyOverContainer && !childrenEL) {
         return moveInsideEmptyContainer(source, overContainer);
     } else if (sameContainer) {
         return moveWithinContainer(source, over);
-    } else if (differentContainer) {
+    } else if (differentContainer && !childrenEL) {
         return moveOutsideContainer(source, over, overContainer);
     } else {
         return null;

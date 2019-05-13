@@ -11,13 +11,22 @@ export default function SimpleList() {
 
   const sortable = new Sortable(containers, {
     draggable: '.StackedListItem--isDraggable',
+      classes: {
+          'container:nested': 'StackedList',
+      },
     mirror: {
       appendTo: containerSelector,
       constrainDimensions: true,
     },
+      swapAnimation: {
+          duration: 200,
+          easingFunction: 'ease-in-out',
+          horizontal: false
+      },
+      plugins: [Plugins.SwapAnimation]
   });
 
-    sortable.on('sortable:stop', (event) => console.log(event));
+    // sortable.on('sortable:stop', (event) => console.log(event));
 
   return sortable;
 }
