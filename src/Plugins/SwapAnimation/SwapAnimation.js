@@ -11,9 +11,9 @@ const onSortableSorted = Symbol('onSortableSorted');
  * @type {Object}
  */
 export const defaultOptions = {
-  duration: 150,
-  easingFunction: 'ease-in-out',
-  horizontal: false,
+    duration: 150,
+    easingFunction: 'ease-in-out',
+    horizontal: false,
 };
 
 /**
@@ -23,85 +23,96 @@ export const defaultOptions = {
  * @extends AbstractPlugin
  */
 export default class SwapAnimation extends AbstractPlugin {
-  /**
-   * SwapAnimation constructor.
-   * @constructs SwapAnimation
-   * @param {Draggable} draggable - Draggable instance
-   */
-  constructor(draggable) {
-    super(draggable);
+    /**
+     * SwapAnimation constructor.
+     * @constructs SwapAnimation
+     * @param {Draggable} draggable - Draggable instance
+     */
+    constructor(draggable) {
+        super(draggable);
+
+        /**
+         * SwapAnimation options
+         * @property {Object} options
+         * @property {Number} defaultOptions.duration
+         * @property {String} defaultOptions.easingFunction
+         * @type {Object}
+         */
+        this.options = {
+            ...defaultOptions,
+            ...this.getOptions(),
+        };
+
+        /**
+         * Last animation frame
+         * @property {Number} lastAnimationFrame
+         * @type {Number}
+         */
+        this.lastAnimationFrame = null;
+
+        this[onSortableSorted] = this[onSortableSorted].bind(this);
+    }
 
     /**
-     * SwapAnimation options
-     * @property {Object} options
-     * @property {Number} defaultOptions.duration
-     * @property {String} defaultOptions.easingFunction
-     * @type {Object}
+     * Attaches plugins event listeners
      */
-    this.options = {
-      ...defaultOptions,
-      ...this.getOptions(),
-    };
+    attach() {
+        this.draggable.on('sortable:sorted', this[onSortableSorted]);
+    }
 
     /**
-     * Last animation frame
-     * @property {Number} lastAnimationFrame
-     * @type {Number}
+     * Detaches plugins event listeners
      */
-    this.lastAnimationFrame = null;
+    detach() {
+        this.draggable.off('sortable:sorted', this[onSortableSorted]);
+    }
 
-    this[onSortableSorted] = this[onSortableSorted].bind(this);
-  }
+    /**
+     * Returns options passed through draggable
+     * @return {Object}
+     */
+    getOptions() {
+        return this.draggable.options.swapAnimation || {};
+    }
 
-  /**
-   * Attaches plugins event listeners
-   */
-  attach() {
-    this.draggable.on('sortable:sorted', this[onSortableSorted]);
-  }
+    /**
+     * Sortable sorted handler
+     * @param {SortableSortedEvent} sortableEvent
+     * @private
+     */
+    [onSortableSorted]({oldIndex, newIndex, dragEvent}) {
+        const {source, over, overContainer, sourceContainer} = dragEvent;
 
-  /**
-   * Detaches plugins event listeners
-   */
-  detach() {
-    this.draggable.off('sortable:sorted', this[onSortableSorted]);
-  }
+        // console.log({
+        //     overContainer,
+        //     sourceContainer,
+        //     source,
+        //     over,
+        //     oldIndex,
+        //     newIndex,
+        //     opts: this.options
+        // });
 
-  /**
-   * Returns options passed through draggable
-   * @return {Object}
-   */
-  getOptions() {
-    return this.draggable.options.swapAnimation || {};
-  }
+        cancelAnimationFrame(this.lastAnimationFrame);
 
-  /**
-   * Sortable sorted handler
-   * @param {SortableSortedEvent} sortableEvent
-   * @private
-   */
-  [onSortableSorted]({oldIndex, newIndex, dragEvent}) {
-    const {source, over} = dragEvent;
+        // Can be done in a separate frame
+        this.lastAnimationFrame = requestAnimationFrame(() => {
+            if(overContainer !== sourceContainer) {
+                console.log({
+                    overContainer,
+                    sourceContainer
+                });
 
-    console.log({
-        source,
-        over,
-        oldIndex,
-        newIndex,
-        opts: this.options
-    });
-
-    cancelAnimationFrame(this.lastAnimationFrame);
-
-    // Can be done in a separate frame
-    this.lastAnimationFrame = requestAnimationFrame(() => {
-      if (oldIndex >= newIndex) {
-        animate(source, over, this.options);
-      } else {
-        animate(over, source, this.options);
-      }
-    });
-  }
+            }
+            else if (oldIndex >= newIndex) {
+                console.log(source, over);
+                animate(source, over, this.options);
+            } else {
+                console.log(source, over);
+                animate(over, source, this.options);
+            }
+        });
+    }
 }
 
 /**
@@ -115,27 +126,27 @@ export default class SwapAnimation extends AbstractPlugin {
  * @private
  */
 function animate(from, to, {duration, easingFunction, horizontal}) {
-  for (const element of [from, to]) {
-    element.style.pointerEvents = 'none';
-  }
+    // for (const element of [from, to]) {
+    //     element.style.pointerEvents = 'none';
+    // }
 
-  if (horizontal) {
-    const width = from.offsetWidth;
-    from.style.transform = `translate3d(${width}px, 0, 0)`;
-    to.style.transform = `translate3d(-${width}px, 0, 0)`;
-  } else {
-    const height = from.offsetHeight;
-    from.style.transform = `translate3d(0, ${height}px, 0)`;
-    to.style.transform = `translate3d(0, -${height}px, 0)`;
-  }
-
-  requestAnimationFrame(() => {
-    for (const element of [from, to]) {
-      element.addEventListener('transitionend', resetElementOnTransitionEnd);
-      element.style.transition = `transform ${duration}ms ${easingFunction}`;
-      element.style.transform = '';
+    if (horizontal) {
+        const width = from.offsetWidth;
+        from.style.transform = `translate3d(${width}px, 0, 0)`;
+        to.style.transform = `translate3d(-${width}px, 0, 0)`;
+    } else {
+        const height = from.offsetHeight;
+        from.style.transform = `translate3d(0, ${height}px, 0)`;
+        to.style.transform = `translate3d(0, -${height}px, 0)`;
     }
-  });
+
+    requestAnimationFrame(() => {
+        for (const element of [from, to]) {
+            element.addEventListener('transitionend', resetElementOnTransitionEnd);
+            element.style.transition = `transform ${duration}ms ${easingFunction}`;
+            element.style.transform = '';
+        }
+    });
 }
 
 /**
@@ -144,7 +155,7 @@ function animate(from, to, {duration, easingFunction, horizontal}) {
  * @private
  */
 function resetElementOnTransitionEnd(event) {
-  event.target.style.transition = '';
-  event.target.style.pointerEvents = '';
-  event.target.removeEventListener('transitionend', resetElementOnTransitionEnd);
+    event.target.style.transition = '';
+    event.target.style.pointerEvents = '';
+    event.target.removeEventListener('transitionend', resetElementOnTransitionEnd);
 }
